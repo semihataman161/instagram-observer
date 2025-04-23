@@ -1,4 +1,4 @@
-export const extractUsernameFromPath = (path: string) => {
+export const getFirstPathSegment = (path: string) => {
   const match = path.match(/^\/([^\/]+)\/?/);
-  return match ? match[1] : null;
+  return match ? match[1] : '';
 };
