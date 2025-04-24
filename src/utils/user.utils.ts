@@ -1,23 +1,23 @@
-export const clickFollowers = (userName: string) => {
-  const element = document.querySelector(
-    `a[href="/${userName}/followers/"]`
-  ) as HTMLAnchorElement | null;
+import { waitForElement } from "./dom.utils";
+
+export const clickFollowers = async (userName: string) => {
+  const selector = `a[href="/${userName}/followers/"]`;
+  const element = await waitForElement(selector, 5000);
 
   if (!element) {
-    console.log("Followers element not found");
+    console.log("clickFollowers: Element not found");
     return;
   }
 
   element.click();
 };
 
-export const clickFollowing = (userName: string) => {
-  const element = document.querySelector(
-    `a[href="/${userName}/following/"]`
-  ) as HTMLAnchorElement | null;
+export const clickFollowing = async (userName: string) => {
+  const selector = `a[href="/${userName}/following/"]`;
+  const element = await waitForElement(selector, 5000);
 
   if (!element) {
-    console.log("Following element not found");
+    console.log("clickFollowing: Element not found");
     return;
   }
 
