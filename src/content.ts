@@ -2,7 +2,7 @@ import "./core/extension/map";
 
 import UrlObserver from "./services/UrlObserver";
 import { getFirstPathSegment } from "./utils/path.utils";
-import { hostUrl, userIdNameMap } from "./helpers/Constants";
+import { hostUrl, apiUrlV1, userIdNameMap } from "./helpers/Constants";
 import { clickFollowers, clickFollowing } from "./utils/user.utils";
 import FetchInterceptor from "./services/FetchInterceptor";
 import { FetchRoute } from "./services/FetchInterceptor/index.type";
@@ -10,21 +10,30 @@ import { FetchRoute } from "./services/FetchInterceptor/index.type";
 let urlObserver: UrlObserver;
 let fetchInterceptor: FetchInterceptor;
 
+console.log('global here');
+
+// https://www.instagram.com/api/v1/friendships/1389322411/followers/?count=12&search_surface=follow_list_page
+
 const handleClickFollowers = (userName: string) => {
   const userId = userIdNameMap.getKeyByValue(userName);
 
-  // const route: FetchRoute = {
-  //   url: `${}`,
-  //   method: 'GET'
-  // };
-  // interceptor.addRoute(route);
+  const route: FetchRoute = {
+    url: `${apiUrlV1}/friendships/${userId}/followers`,
+    method: "GET",
+    beforeExecute: async (url, request) => {
+      console.log("url: ", url);
+      console.log("request: ", request);
+      return false;
+    },
+  };
+  fetchInterceptor.addRoute(route);
 
   clickFollowers(userName);
 };
 
 const handleClickFollowing = (userName: string) => {
   // const route: FetchRoute = {};
-  // interceptor.addRoute(route);
+  // fetchInterceptor.addRoute(route);
 
   clickFollowing(userName);
 };
@@ -37,7 +46,7 @@ const onPageRefresh = (path: string) => {
     return;
   }
 
-  // handleClickFollowers(firstSegment);
+  handleClickFollowers(firstSegment);
   // handleClickFollowing(firstSegment);
 };
 
