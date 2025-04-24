@@ -1,1 +1,1 @@
-export const observedUsers = ["ecemkrcl", "ecolimecoli", "semihataman16"];
+export const observedUsers = ["ecemkrcl", "semihataman16"];

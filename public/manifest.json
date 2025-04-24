@@ -3,10 +3,21 @@
   "name": "Instagram Observer",
   "version": "1.0",
   "description": "Track changes in Instagram profile pages",
-  "permissions": ["storage", "notifications"],
-  "host_permissions": ["https://www.instagram.com/*"],
+  "icons": {
+    "16": "./assets/16.png",
+    "32": "./assets/32.png",
+    "48": "./assets/48.png",
+    "128": "./assets/128.png"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_title": "Instagram Observer",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "./assets/16.png",
+      "32": "./assets/32.png",
+      "48": "./assets/48.png",
+      "128": "./assets/128.png"
+    }
   },
   "content_scripts": [
     {
@@ -14,5 +25,7 @@
       "js": ["content.js"],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "permissions": ["storage", "notifications"],
+  "host_permissions": ["https://www.instagram.com/*"]
 }
