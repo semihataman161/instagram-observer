@@ -1,4 +1,4 @@
-class UrlHelper {
+class UrlObserver {
   #observer: MutationObserver;
 
   #host = location.host;
@@ -35,4 +35,4 @@ class UrlHelper {
   }
 }
 
-export default UrlHelper;
+export default UrlObserver;
