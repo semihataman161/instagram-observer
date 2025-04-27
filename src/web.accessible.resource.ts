@@ -10,8 +10,6 @@ import { FetchRoute } from "./services/FetchInterceptor/index.type";
 let urlObserver: UrlObserver;
 let fetchInterceptor: FetchInterceptor;
 
-console.log('global here');
-
 // https://www.instagram.com/api/v1/friendships/1389322411/followers/?count=12&search_surface=follow_list_page
 
 const handleClickFollowers = (userName: string) => {

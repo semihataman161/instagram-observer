@@ -6,10 +6,12 @@ export default defineConfig({
     rollupOptions: {
       input: {
         content: "src/content.ts",
+        webAccessibleResource: "src/web.accessible.resource.ts",
       },
       output: {
-        entryFileNames: "content.js",
-        format: "iife", // Immediately Invoked Function Expression for browser compatibility
+        entryFileNames: "[name].js",
+        format: "es",
+        inlineDynamicImports: false,
       },
     },
     target: "es2017",

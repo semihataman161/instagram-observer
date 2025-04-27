@@ -9,11 +9,7 @@ class FetchInterceptor {
   }
 
   public start() {
-    console.log("fetch interceptor started");
-
     window.fetch = async (url, request) => {
-      console.log("windowFetched");
-
       const stringUrl = url.toString();
       const method = request.method;
 
