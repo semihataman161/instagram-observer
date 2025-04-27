@@ -20,7 +20,6 @@ class FetchInterceptor {
             stringUrl?.includes(element.url) && method === element.method
         );
 
-      console.log("foundRoute: ", foundRoute);
       if (foundRoute) {
         let shouldExecuteOriginalFetch = false;
 
