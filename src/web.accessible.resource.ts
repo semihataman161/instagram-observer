@@ -2,33 +2,41 @@ import './core/extension/map';
 
 import UrlObserver from './services/UrlObserver';
 import { getFirstPathSegment } from './utils/path.utils';
-import { hostUrl, userIdNameMap } from './helpers/Constants';
-import { clickFollowers, clickFollowing } from './utils/user.utils';
+import {
+  getFollowersCount,
+  clickFollowers,
+  clickFollowing,
+  changeCountInQueryString,
+} from './utils/user.utils';
 import XhrInterceptor, { XhrRoute } from './services/XhrInterceptor';
+import { hostUrl, userIdNameMap } from './helpers/Constants';
 
 function initializeScript() {
   let urlObserver: UrlObserver;
   let xhrInterceptor: XhrInterceptor;
 
-  const handleClickFollowers = (userName: string) => {
+  const handleClickFollowers = async (userName: string) => {
     const userId = userIdNameMap.getKeyByValue(userName);
+    const followersCount = await getFollowersCount();
+    const users = [];
 
     const route: XhrRoute = {
       url: `friendships/${userId}/followers`,
       method: 'GET',
       beforeExecute: async (url, request) => {
-        const changeCountInQueryString = (url: string, newCount: number) => {
-          return url.replace(/(count=)(\d+)/, `$1${newCount}`);
-        };
+      const count = 25;
+      const updatedUrl = changeCountInQueryString(url, count);
+      return updatedUrl;
+    },
+    afterExecute: async (url, response) => {
+      const jsonResponse = await response.json();
+      console.log('After Execute:', jsonResponse);
 
-        const count = 100;
-        const updatedUrl = changeCountInQueryString(url, count);
-        return updatedUrl;
-      },
-      afterExecute: async (url, response) => {
-        const jsonResponse = await response.json();
-        console.log('After Execute:', jsonResponse);
-      },
+      while (!jsonResponse.next_max_id) {
+        const newRoute = { ...route, url: jsonResponse.nextPageUrl };
+        xhrInterceptor.addRoute(newRoute);
+      }
+    },
     };
 
     xhrInterceptor.addRoute(route);

@@ -73,8 +73,6 @@ class XHRInterceptor {
               for (const [key, value] of Object.entries(this.requestHeaders)) {
                 super.setRequestHeader(key, value);
               }
-
-              // Orijinal isteği gönder
               super.send(this.body);
             } else {
               setTimeout(() => {
@@ -99,6 +97,11 @@ class XHRInterceptor {
                   status: responseStatus,
                 });
                 foundRoute.afterExecute(this.url, response);
+
+                // Repeat logic: Add new route or handle next URL
+                if (this.url !== updatedUrl) {
+                  this.send(); // Send with updated URL
+                }
               };
             }
           })();
