@@ -1,8 +1,10 @@
 import { XhrRoute } from './index.type';
+import RequestContext from './RequestContext';
 
 class XHRInterceptor {
   private originalXHR: typeof XMLHttpRequest;
   private routes: XhrRoute[] = [];
+  private requestContexts: Record<string, RequestContext> = {};
 
   constructor() {
     this.originalXHR = window.XMLHttpRequest;
@@ -11,12 +13,21 @@ class XHRInterceptor {
   public start() {
     const routes = this.routes;
     const OriginalXHR = this.originalXHR;
+    const requestContexts = this.requestContexts;
 
     class CustomXHR extends OriginalXHR {
       private method = '';
       private url = '';
       private requestHeaders: Record<string, string> = {};
       private body?: Document | XMLHttpRequestBodyInit | null;
+
+      // Store requestContexts from the parent class
+      private requestContexts: Record<string, RequestContext>;
+
+      constructor(requestContexts: Record<string, RequestContext>) {
+        super();
+        this.requestContexts = requestContexts;
+      }
 
       open(
         method: string,
@@ -37,6 +48,17 @@ class XHRInterceptor {
 
       send(body?: Document | XMLHttpRequestBodyInit | null) {
         this.body = body;
+
+        const requestContext = new RequestContext(this.method, this.url);
+
+        // Store headers into the requestContext
+        for (const [header, value] of Object.entries(this.requestHeaders)) {
+          requestContext.setHeader(header, value);
+        }
+
+        console.log('sem1: ', requestContext);
+        // Store the request context for this URL
+        this.requestContexts[this.url] = requestContext;
 
         const foundRoute = [...routes]
           .reverse()
@@ -97,11 +119,6 @@ class XHRInterceptor {
                   status: responseStatus,
                 });
                 foundRoute.afterExecute(this.url, response);
-
-                // Repeat logic: Add new route or handle next URL
-                if (this.url !== updatedUrl) {
-                  this.send(); // Send with updated URL
-                }
               };
             }
           })();
@@ -111,14 +128,21 @@ class XHRInterceptor {
       }
     }
 
+    // Assign CustomXHR to window.XMLHttpRequest
     window.XMLHttpRequest = CustomXHR as any;
+  }
+
+  // Method to retrieve headers for a given URL
+  public getRequestHeaders(url: string): Record<string, string> | null {
+    console.log('semmo: ', this.requestContexts);
+    return this.requestContexts[url]?.getHeaders() ?? null;
   }
 
   public addRoute(route: XhrRoute) {
     this.routes.push(route);
   }
 
-  public removeRoutes(url: string) {
+  public removeRoute(url: string) {
     this.routes = this.routes.filter((element) => element.url !== url);
   }
 }

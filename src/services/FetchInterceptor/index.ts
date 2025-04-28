@@ -52,7 +52,7 @@ class FetchInterceptor {
     this.routes.push(route);
   }
 
-  public removeRoutes(url: string) {
+  public removeRoute(url: string) {
     this.routes = this.routes.filter((element) => element.url !== url);
   }
 }

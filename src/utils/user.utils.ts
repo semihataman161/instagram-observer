@@ -2,7 +2,7 @@ import { waitForElement } from './dom.utils';
 
 const getPostFollowerFollowingWrapper = async () => {
   const selector =
-    '.x78zum5.x1q0g3np.x1l1ennw.xz9dl7a.x4uap5.xsag5q8.xkhd6sd.x5ur3kl.x13fuv20.x178xt8z';
+    'section.xc3tme8.x1xdureb.x18wylqe.x13vxnyz.xvxrpd7';
   const parentElement = await waitForElement(selector, 5000);
 
   if (!parentElement) {
