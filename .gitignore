@@ -3,3 +3,6 @@
 
 # output
 dist
+
+# Vscode
+.vscode/

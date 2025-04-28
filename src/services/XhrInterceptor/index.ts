@@ -1,75 +1,114 @@
-import { XhrRoute } from "./index.type";
+import { XhrRoute } from './index.type';
 
-class XhrInterceptor {
-  private originalXMLHttpRequest: typeof XMLHttpRequest;
+class XHRInterceptor {
+  private originalXHR: typeof XMLHttpRequest;
   private routes: XhrRoute[] = [];
 
   constructor() {
-    this.originalXMLHttpRequest = window.XMLHttpRequest;
+    this.originalXHR = window.XMLHttpRequest;
   }
 
   public start() {
-    const self = this;
+    const routes = this.routes;
+    const OriginalXHR = this.originalXHR;
 
-    window.XMLHttpRequest = class extends this.originalXMLHttpRequest {
-      private afterSendCallback = null;
+    class CustomXHR extends OriginalXHR {
+      private method = '';
+      private url = '';
+      private requestHeaders: Record<string, string> = {};
+      private body?: Document | XMLHttpRequestBodyInit | null;
 
-      constructor() {
-        super();
-        const xhr = this;
+      open(
+        method: string,
+        url: string,
+        async: boolean = true,
+        username?: string | null,
+        password?: string | null
+      ) {
+        this.method = method;
+        this.url = url;
+        super.open(method, url, async, username ?? null, password ?? null);
+      }
 
-        const originalOpen = xhr.open;
-        xhr.open = function (method: string, url: string) {
-          const foundRoute = [...self.routes]
-            .reverse()
-            .find(
-              (element) =>
-                url?.includes(element.url) && method === element.method
-            );
+      setRequestHeader(header: string, value: string) {
+        this.requestHeaders[header] = value;
+        super.setRequestHeader(header, value);
+      }
 
-          console.log("Found route: ", foundRoute);
-          // Eğer belirli bir URL bulunursa, parametreleri değiştireceğiz.
-          if (foundRoute) {
-            // Burada URL parametrelerini değiştirebiliriz
-            if (
-              url.includes(
-                "https://www.instagram.com/api/v1/friendships/2382378448/followers"
-              )
-            ) {
-              const modifiedUrl = url.replace("count=20", "count=50"); // Örneğin, count parametresini değiştirebiliriz
-              console.log("Modified URL:", modifiedUrl);
+      send(body?: Document | XMLHttpRequestBodyInit | null) {
+        this.body = body;
 
-              // Yeni URL ile isteği kendimiz gönderiyoruz
-              const newRequest = new XMLHttpRequest();
-              newRequest.open(method, modifiedUrl, true);
-              newRequest.withCredentials = true;
-              newRequest.send();
+        const foundRoute = [...routes]
+          .reverse()
+          .find(
+            (route) =>
+              this.url.includes(route.url) && this.method === route.method
+          );
 
-              // Callback fonksiyonu çağırıyoruz
-              if (xhr.afterSendCallback) {
-                xhr.afterSendCallback(this);
+        if (foundRoute) {
+          (async () => {
+            let updatedUrl = this.url;
+            let shouldExecuteOriginalXHR = true;
+
+            if (foundRoute.beforeExecute) {
+              const requestInfo = {
+                method: this.method,
+                headers: this.requestHeaders,
+                body: this.body,
+              };
+              const result = await foundRoute.beforeExecute(
+                this.url,
+                requestInfo
+              );
+
+              if (typeof result === 'string') {
+                updatedUrl = result;
+              } else if (result === false) {
+                shouldExecuteOriginalXHR = false;
+              }
+            }
+
+            if (shouldExecuteOriginalXHR) {
+              super.open(this.method, updatedUrl, true);
+              for (const [key, value] of Object.entries(this.requestHeaders)) {
+                super.setRequestHeader(key, value);
               }
 
-              return; // Orijinal istek gönderilmiyor, sadece yeni istek yapılacak
+              // Orijinal isteği gönder
+              super.send(this.body);
+            } else {
+              setTimeout(() => {
+                Object.defineProperty(this, 'readyState', { value: 4 });
+                Object.defineProperty(this, 'status', { value: 200 });
+                Object.defineProperty(this, 'responseText', {
+                  value: '{}',
+                });
+
+                if (this.onload) {
+                  this.onload(new ProgressEvent('load'));
+                }
+              }, 0);
             }
-            xhr.afterSendCallback = foundRoute.afterExecute || null;
-          } else {
-            xhr.afterSendCallback = null;
-          }
 
-          originalOpen.apply(xhr, arguments);
-        };
+            if (foundRoute.afterExecute) {
+              this.onload = () => {
+                const responseText = this.responseText;
+                const responseStatus = this.status;
 
-        const originalSend = xhr.send;
-        xhr.send = async function (data: any) {
-          originalSend.apply(xhr, arguments);
-
-          if (xhr.afterSendCallback) {
-            xhr.afterSendCallback(this);
-          }
-        };
+                const response = new Response(responseText, {
+                  status: responseStatus,
+                });
+                foundRoute.afterExecute(this.url, response);
+              };
+            }
+          })();
+        } else {
+          super.send(body);
+        }
       }
-    };
+    }
+
+    window.XMLHttpRequest = CustomXHR as any;
   }
 
   public addRoute(route: XhrRoute) {
@@ -81,4 +120,5 @@ class XhrInterceptor {
   }
 }
 
-export default XhrInterceptor;
+export default XHRInterceptor;
+export type { XhrRoute };

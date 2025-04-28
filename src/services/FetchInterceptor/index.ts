@@ -1,4 +1,4 @@
-import { FetchRoute } from "./index.type";
+import { FetchRoute } from './index.type';
 
 class FetchInterceptor {
   private originalFetch: typeof fetch;
@@ -30,7 +30,7 @@ class FetchInterceptor {
           );
         }
 
-        const defaultResponse = new Response("{}", { status: 200 });
+        const defaultResponse = new Response('{}', { status: 200 });
         let response = foundRoute?.originalResponse || defaultResponse;
 
         if (shouldExecuteOriginalFetch) {
@@ -58,3 +58,4 @@ class FetchInterceptor {
 }
 
 export default FetchInterceptor;
+export type { FetchRoute };

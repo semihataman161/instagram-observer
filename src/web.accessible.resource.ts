@@ -1,11 +1,10 @@
-import "./core/extension/map";
+import './core/extension/map';
 
-import UrlObserver from "./services/UrlObserver";
-import { getFirstPathSegment } from "./utils/path.utils";
-import { hostUrl, userIdNameMap } from "./helpers/Constants";
-import { clickFollowers, clickFollowing } from "./utils/user.utils";
-import XhrInterceptor from "./services/XhrInterceptor";
-import { XhrRoute } from "./services/XhrInterceptor/index.type";
+import UrlObserver from './services/UrlObserver';
+import { getFirstPathSegment } from './utils/path.utils';
+import { hostUrl, userIdNameMap } from './helpers/Constants';
+import { clickFollowers, clickFollowing } from './utils/user.utils';
+import XhrInterceptor, { XhrRoute } from './services/XhrInterceptor';
 
 function initializeScript() {
   let urlObserver: UrlObserver;
@@ -14,13 +13,25 @@ function initializeScript() {
   const handleClickFollowers = (userName: string) => {
     const userId = userIdNameMap.getKeyByValue(userName);
 
-    xhrInterceptor.addRoute({
-      url: "https://www.instagram.com/api/v1/friendships/2382378448/followers",
-      method: "GET",
-      afterExecute: (xhr) => {
-        console.log("Custom handler after the request is completed:", xhr);
+    const route: XhrRoute = {
+      url: `friendships/${userId}/followers`,
+      method: 'GET',
+      beforeExecute: async (url, request) => {
+        const changeCountInQueryString = (url: string, newCount: number) => {
+          return url.replace(/(count=)(\d+)/, `$1${newCount}`);
+        };
+
+        const count = 100;
+        const updatedUrl = changeCountInQueryString(url, count);
+        return updatedUrl;
       },
-    });
+      afterExecute: async (url, response) => {
+        const jsonResponse = await response.json();
+        console.log('After Execute:', jsonResponse);
+      },
+    };
+
+    xhrInterceptor.addRoute(route);
 
     clickFollowers(userName);
   };
@@ -42,7 +53,7 @@ function initializeScript() {
   };
 
   const onPathChange = (path: string) => {
-    console.log("ChangedPath: ", path);
+    console.log('ChangedPath: ', path);
   };
 
   const startScript = () => {
