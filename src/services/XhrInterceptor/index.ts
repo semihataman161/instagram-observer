@@ -1,10 +1,8 @@
 import { XhrRoute } from './index.type';
-import RequestContext from './RequestContext';
 
-class XHRInterceptor {
+class XhrInterceptor {
   private originalXHR: typeof XMLHttpRequest;
   private routes: XhrRoute[] = [];
-  private requestContexts: Record<string, RequestContext> = {};
 
   constructor() {
     this.originalXHR = window.XMLHttpRequest;
@@ -13,21 +11,12 @@ class XHRInterceptor {
   public start() {
     const routes = this.routes;
     const OriginalXHR = this.originalXHR;
-    const requestContexts = this.requestContexts;
 
     class CustomXHR extends OriginalXHR {
       private method = '';
       private url = '';
       private requestHeaders: Record<string, string> = {};
       private body?: Document | XMLHttpRequestBodyInit | null;
-
-      // Store requestContexts from the parent class
-      private requestContexts: Record<string, RequestContext>;
-
-      constructor(requestContexts: Record<string, RequestContext>) {
-        super();
-        this.requestContexts = requestContexts;
-      }
 
       open(
         method: string,
@@ -49,17 +38,6 @@ class XHRInterceptor {
       send(body?: Document | XMLHttpRequestBodyInit | null) {
         this.body = body;
 
-        const requestContext = new RequestContext(this.method, this.url);
-
-        // Store headers into the requestContext
-        for (const [header, value] of Object.entries(this.requestHeaders)) {
-          requestContext.setHeader(header, value);
-        }
-
-        console.log('sem1: ', requestContext);
-        // Store the request context for this URL
-        this.requestContexts[this.url] = requestContext;
-
         const foundRoute = [...routes]
           .reverse()
           .find(
@@ -69,58 +47,46 @@ class XHRInterceptor {
 
         if (foundRoute) {
           (async () => {
-            let updatedUrl = this.url;
-            let shouldExecuteOriginalXHR = true;
+            super.open(this.method, this.url, true);
 
-            if (foundRoute.beforeExecute) {
-              const requestInfo = {
-                method: this.method,
-                headers: this.requestHeaders,
-                body: this.body,
-              };
-              const result = await foundRoute.beforeExecute(
-                this.url,
-                requestInfo
-              );
-
-              if (typeof result === 'string') {
-                updatedUrl = result;
-              } else if (result === false) {
-                shouldExecuteOriginalXHR = false;
-              }
+            for (const [key, value] of Object.entries(this.requestHeaders)) {
+              super.setRequestHeader(key, value);
             }
 
-            if (shouldExecuteOriginalXHR) {
-              super.open(this.method, updatedUrl, true);
-              for (const [key, value] of Object.entries(this.requestHeaders)) {
-                super.setRequestHeader(key, value);
-              }
-              super.send(this.body);
-            } else {
-              setTimeout(() => {
-                Object.defineProperty(this, 'readyState', { value: 4 });
-                Object.defineProperty(this, 'status', { value: 200 });
-                Object.defineProperty(this, 'responseText', {
-                  value: '{}',
-                });
+            // Save original handlers
+            const originalOnload = this.onload;
+            const originalOnerror = this.onerror;
 
-                if (this.onload) {
-                  this.onload(new ProgressEvent('load'));
+            // Set your custom handlers
+            this.onload = (event) => {
+              if (this.status >= 200 && this.status < 300) {
+                try {
+                  const jsonData = JSON.parse(this.responseText);
+
+                  if (foundRoute.callback) {
+                    foundRoute.callback(jsonData);
+                  }
+                } catch (error) {
+                  console.error('Failed to parse JSON response:', error);
                 }
-              }, 0);
-            }
+              } else {
+                console.error('Request failed with status:', this.status);
+              }
 
-            if (foundRoute.afterExecute) {
-              this.onload = () => {
-                const responseText = this.responseText;
-                const responseStatus = this.status;
+              if (originalOnload) {
+                originalOnload.call(this, event);
+              }
+            };
 
-                const response = new Response(responseText, {
-                  status: responseStatus,
-                });
-                foundRoute.afterExecute(this.url, response);
-              };
-            }
+            this.onerror = (event) => {
+              console.error('Network error or request failed');
+
+              if (originalOnerror) {
+                originalOnerror.call(this, event);
+              }
+            };
+
+            super.send(this.body);
           })();
         } else {
           super.send(body);
@@ -128,14 +94,7 @@ class XHRInterceptor {
       }
     }
 
-    // Assign CustomXHR to window.XMLHttpRequest
     window.XMLHttpRequest = CustomXHR as any;
-  }
-
-  // Method to retrieve headers for a given URL
-  public getRequestHeaders(url: string): Record<string, string> | null {
-    console.log('semmo: ', this.requestContexts);
-    return this.requestContexts[url]?.getHeaders() ?? null;
   }
 
   public addRoute(route: XhrRoute) {
@@ -147,5 +106,5 @@ class XHRInterceptor {
   }
 }
 
-export default XHRInterceptor;
+export default XhrInterceptor;
 export type { XhrRoute };

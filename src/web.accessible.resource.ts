@@ -3,61 +3,67 @@ import './core/extension/map';
 import UrlObserver from './services/UrlObserver';
 import { getFirstPathSegment } from './utils/path.utils';
 import {
-  getFollowersCount,
   clickFollowers,
   clickFollowing,
-  changeCountInQueryString,
+  getFollowersCount,
+  scrollDiv,
 } from './utils/user.utils';
-import XHRInterceptor, { XhrRoute } from './services/XHRInterceptor';
-import RequestService from './services/XHRInterceptor/RequestService';
-import { hostUrl, userIdNameMap } from './helpers/Constants';
+import { delay } from './utils/async.utils';
+import XhrInterceptor, { XhrRoute } from './services/XhrInterceptor';
+import { apiV1, hostUrl, userIdNameMap } from './helpers/Constants';
+import { FollowersResponse } from './api/types/followers';
 
 function initializeScript() {
+  const instaPageSize = 12;
+
   let urlObserver: UrlObserver;
-  let xhrInterceptor: XHRInterceptor;
+  let xhrInterceptor: XhrInterceptor;
 
-  const handleClickFollowers = async (userName: string) => {
+  const mountFollowersInterceptor = (
+    url: string
+  ): Promise<FollowersResponse['users']> => {
+    return new Promise((resolve) => {
+      const route: XhrRoute = {
+        url,
+        method: 'GET',
+        callback: (data: FollowersResponse) => {
+          resolve(data.users);
+        },
+      };
+
+      xhrInterceptor.addRoute(route);
+    });
+  };
+
+  const getAllFollowers = async (userName: string) => {
+    await clickFollowers(userName);
+
     const userId = userIdNameMap.getKeyByValue(userName);
+    const url = `${apiV1}/friendships/${userId}/followers`;
+
+    let followers: FollowersResponse['users'] = [];
+
     const followersCount = await getFollowersCount();
-    const users = [];
-    let nextMaxId = null;
+    const iterationCount = Math.ceil(followersCount / instaPageSize);
 
-    const initialUrl = `friendships/${userId}/followers`;
+    console.log(iterationCount);
 
-    const route: XhrRoute = {
-      url: initialUrl,
-      method: 'GET',
-      beforeExecute: async (url, request) => {
-        const count = 25;
-        let updatedUrl = changeCountInQueryString(url, count);
-        return updatedUrl;
-      },
-      afterExecute: async (url, response) => {
-        const jsonResponse = await response.json();
-        console.log('After Execute:', jsonResponse);
-        nextMaxId = jsonResponse.next_max_id;
-      },
-    };
+    for (let i = 0; i < 10; i++) {
+      const users = await mountFollowersInterceptor(url);
+      followers = [...followers, ...users];
 
-    xhrInterceptor.addRoute(route);
+      await delay(1000);
+      await scrollDiv();
+    }
 
-    const requestService = new RequestService(xhrInterceptor);
-
-    // Send a request using the intercepted headers
-    requestService
-      .makeRequest('/api/data')
-      .then((response) => response.json())
-      .then((data) => console.log('Response Data:', data))
-      .catch((error) => console.error('Error:', error));
-
-    clickFollowers(userName);
+    return followers;
   };
 
-  const handleClickFollowing = (userName: string) => {
-    clickFollowing(userName);
+  const handleClickFollowing = async (userName: string) => {
+    await clickFollowing(userName);
   };
 
-  const onPageRefresh = (path: string) => {
+  const onPageRefresh = async (path: string) => {
     const firstSegment = getFirstPathSegment(path);
     const shouldObserve = userIdNameMap.hasValue(firstSegment);
 
@@ -65,7 +71,8 @@ function initializeScript() {
       return;
     }
 
-    handleClickFollowers(firstSegment);
+    const allFollowers = await getAllFollowers(firstSegment);
+    console.log(allFollowers);
     // handleClickFollowing(firstSegment);
   };
 
@@ -74,7 +81,7 @@ function initializeScript() {
   };
 
   const startScript = () => {
-    xhrInterceptor = new XHRInterceptor();
+    xhrInterceptor = new XhrInterceptor();
     xhrInterceptor.start();
 
     urlObserver = new UrlObserver(hostUrl, (path) => onPathChange(path));
