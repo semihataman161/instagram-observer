@@ -1,4 +1,4 @@
-import { XhrRoute } from './index.type';
+import { FollowUpRequest, XhrRoute } from './index.type';
 
 class XhrInterceptor {
   private originalXHR: typeof XMLHttpRequest;
@@ -16,7 +16,6 @@ class XhrInterceptor {
       private method = '';
       private url = '';
       private requestHeaders: Record<string, string> = {};
-      private body?: Document | XMLHttpRequestBodyInit | null;
 
       open(
         method: string,
@@ -36,8 +35,6 @@ class XhrInterceptor {
       }
 
       send(body?: Document | XMLHttpRequestBodyInit | null) {
-        this.body = body;
-
         const foundRoute = [...routes]
           .reverse()
           .find(
@@ -53,11 +50,9 @@ class XhrInterceptor {
               super.setRequestHeader(key, value);
             }
 
-            // Save original handlers
             const originalOnload = this.onload;
             const originalOnerror = this.onerror;
 
-            // Set your custom handlers
             this.onload = (event) => {
               if (this.status >= 200 && this.status < 300) {
                 try {
@@ -65,6 +60,12 @@ class XhrInterceptor {
 
                   if (foundRoute.callback) {
                     foundRoute.callback(jsonData);
+                  }
+
+                  // Handle follow-up requests with the response data
+                  const followUpRequest = foundRoute.followUpRequest;
+                  if (followUpRequest) {
+                    this.handleFollowUp(followUpRequest, jsonData);
                   }
                 } catch (error) {
                   console.error('Failed to parse JSON response:', error);
@@ -86,11 +87,68 @@ class XhrInterceptor {
               }
             };
 
-            super.send(this.body);
+            super.send(body);
           })();
         } else {
           super.send(body);
         }
+      }
+
+      private async handleFollowUp(
+        followUpRequest: FollowUpRequest,
+        prevData: any
+      ) {
+        let currentRequest: FollowUpRequest | null | undefined =
+          followUpRequest;
+        let responseData: any = null;
+
+        const processNext = async (data: any) => {
+          if (!currentRequest) return;
+
+          const url = currentRequest.getUrl(data);
+          const method = currentRequest.method ?? this.method;
+          const body = currentRequest.bodyBuilder
+            ? currentRequest.bodyBuilder(data)
+            : null;
+          const headers = currentRequest.headers ?? this.requestHeaders;
+
+          try {
+            const nextData = await new Promise<any>((resolve, reject) => {
+              const nextRequest = new XMLHttpRequest();
+              nextRequest.open(method, url, true);
+
+              for (const [key, value] of Object.entries(headers)) {
+                nextRequest.setRequestHeader(key, value);
+              }
+
+              nextRequest.onload = () => {
+                if (nextRequest.status >= 200 && nextRequest.status < 300) {
+                  try {
+                    resolve(JSON.parse(nextRequest.responseText));
+                  } catch (error) {
+                    reject('Failed to parse JSON response');
+                  }
+                } else {
+                  reject(`Request failed with status: ${nextRequest.status}`);
+                }
+              };
+
+              nextRequest.onerror = () => reject('Network error');
+              nextRequest.send(body);
+            });
+
+            responseData = nextData;
+
+            if (currentRequest.next) {
+              currentRequest = currentRequest.next(data, nextData);
+              await processNext(nextData);
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        };
+
+        await processNext(prevData);
       }
     }
 
