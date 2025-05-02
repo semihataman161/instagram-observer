@@ -1,6 +1,6 @@
-import { FollowUpRequest } from './index.type';
+import { FollowUpRequest } from '../index.type';
 
-export function buildFollowUpChain(
+export const buildFollowUpRequest = (
   requests: {
     getUrl: (prevData: any) => string;
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -9,7 +9,7 @@ export function buildFollowUpChain(
     nextCallback?: (data: any) => void;
     shouldContinue?: (data: any) => boolean;
   }[]
-): FollowUpRequest {
+): FollowUpRequest => {
   const buildStep = (index: number): FollowUpRequest => {
     const {
       getUrl,
@@ -38,4 +38,4 @@ export function buildFollowUpChain(
   };
 
   return buildStep(0);
-}
+};

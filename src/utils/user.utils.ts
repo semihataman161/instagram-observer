@@ -1,6 +1,6 @@
 import { waitForElement } from './dom.utils';
 
-const INSTAGRAM_PAGE_SIZE = 12;
+export const USER_PAGE_SIZE = 12;
 
 const getPostFollowerFollowingWrapper = async () => {
   const selector = 'section.xc3tme8.x1xdureb.x18wylqe.x13vxnyz.xvxrpd7';
@@ -89,5 +89,5 @@ export const scrollElement = (element: HTMLElement) => {
 
 export const getScrollCount = async () => {
   const followersCount = await getFollowersCount();
-  return Math.floor(followersCount / INSTAGRAM_PAGE_SIZE);
+  return Math.floor(followersCount / USER_PAGE_SIZE);
 };
