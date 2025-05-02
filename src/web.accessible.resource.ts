@@ -5,8 +5,9 @@ import { getFirstPathSegment } from './utils/path.utils';
 import {
   clickFollowers,
   clickFollowing,
-  getFollowersCount,
-  scrollDiv,
+  getScrollCount,
+  getScrollDiv,
+  scrollElement,
 } from './utils/user.utils';
 import { delay } from './utils/async.utils';
 import XhrInterceptor, { XhrRoute } from './services/XhrInterceptor';
@@ -14,14 +15,10 @@ import { apiV1, hostUrl, userIdNameMap } from './helpers/Constants';
 import { FollowersResponse } from './api/types/followers';
 
 function initializeScript() {
-  const instaPageSize = 12;
-
   let urlObserver: UrlObserver;
   let xhrInterceptor: XhrInterceptor;
 
-  const mountFollowersInterceptor = (
-    url: string
-  ): Promise<FollowersResponse['users']> => {
+  const getFollowers = (url: string): Promise<FollowersResponse['users']> => {
     return new Promise((resolve) => {
       const route: XhrRoute = {
         url,
@@ -36,26 +33,32 @@ function initializeScript() {
   };
 
   const getAllFollowers = async (userName: string) => {
-    await clickFollowers(userName);
-
     const userId = userIdNameMap.getKeyByValue(userName);
     const url = `${apiV1}/friendships/${userId}/followers`;
 
     let followers: FollowersResponse['users'] = [];
 
-    const followersCount = await getFollowersCount();
-    const iterationCount = Math.ceil(followersCount / instaPageSize);
+    await clickFollowers(userName);
+    const newFollowers = await getFollowers(url);
+    followers = [...followers, ...newFollowers];
 
-    console.log(iterationCount);
-
-    for (let i = 0; i < 10; i++) {
-      const users = await mountFollowersInterceptor(url);
-      followers = [...followers, ...users];
-
-      await delay(1000);
-      await scrollDiv();
+    const scrollDiv = await getScrollDiv();
+    if (!scrollDiv) {
+      return [];
     }
 
+    const scrollCount = await getScrollCount();
+    console.log('scrollCount: ', scrollCount);
+
+    for (let i = 0; i < scrollCount; i++) {
+      scrollElement(scrollDiv);
+      const newFollowers = await getFollowers(url);
+      followers = [...followers, ...newFollowers];
+      console.log(`Count -> ${i + 1}`);
+      await delay(7000);
+    }
+
+    console.log('Finished');
     return followers;
   };
 
