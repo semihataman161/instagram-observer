@@ -5,14 +5,21 @@ import { getFirstPathSegment } from './utils/path.utils';
 import { clickFollowers, clickFollowing } from './utils/user.utils';
 import XhrInterceptor, { XhrRoute } from './services/XhrInterceptor';
 import { apiV1, hostUrl, userIdNameMap } from './helpers/Constants';
-import { FollowersResponse } from './api/types/followers';
+import { FollowersResponse, UserType } from './api/types/followers';
 import { buildFollowUpChain } from './services/XhrInterceptor/route';
 
 const initializeScript = () => {
   let urlObserver: UrlObserver;
   let xhrInterceptor: XhrInterceptor;
 
-  const getFollowers = (url: string) => {
+  const getUsers = (url: string, type: UserType) => {
+    let nextUrl = '';
+
+    if(type === 'followers') {
+      
+    } else {
+
+    }
     const requests = [
       {
         getUrl: (prevData: any = {}) => {
@@ -46,40 +53,46 @@ const initializeScript = () => {
     let followers: FollowersResponse['users'] = [];
 
     await clickFollowers(userName);
-    // ---> /api/v1/friendships/1389322411/followers/?count=12&search_surface=follow_list_page
     getFollowers(url);
-    // const newFollowers = await getFollowers(url);
-
-    // if (newFollowers.next_max_id) {
-    //   const modifiedUrl = `${url}/?count=12&search_surface=follow_list_page&max_id=${newFollowers.next_max_id}`;
-    //   const x = await getFollowers(url);
-    //   console.log(x);
-    // }
-    // followers = [...followers, ...newFollowers];
-
-    // const scrollDiv = await getScrollDiv();
-    // if (!scrollDiv) {
-    //   return [];
-    // }
-
-    // const scrollCount = await getScrollCount();
-    // console.log('scrollCount: ', scrollCount);
-
-    // for (let i = 0; i < 2; i++) {
-    //   scrollElement(scrollDiv);
-    //   const newFollowers = await getFollowers(url);
-    //   followers = [...followers, ...newFollowers];
-    //   console.log(followers.length);
-    //   console.log(`Count -> ${i + 1}`);
-    //   await delay(7000);
-    // }
-
-    // console.log('Finished');
     return followers;
   };
 
-  const handleClickFollowing = async (userName: string) => {
+  const getFollowing = (url: string) => {
+    const requests = [
+      {
+        getUrl: (prevData: any = {}) => {
+          const maxId = prevData?.next_max_id ?? '';
+          return `${url}/?count=12&search_surface=follow_list_page${
+            maxId ? `&max_id=${maxId}` : ''
+          }`;
+        },
+        nextCallback: (data: any) => {
+          console.log('User Data:', data);
+        },
+        shouldContinue: (data: any) => !!data.next_max_id,
+      },
+    ];
+
+    const followUpRequest = buildFollowUpChain(requests);
+
+    const route: XhrRoute = {
+      url,
+      method: 'GET',
+      followUpRequest,
+    };
+
+    xhrInterceptor.addRoute(route);
+  };
+
+  const getAllFollowing = async (userName: string) => {
+    const userId = userIdNameMap.getKeyByValue(userName);
+    const url = `${apiV1}/friendships/${userId}/followers`;
+
+    let following: FollowersResponse['users'] = [];
+
     await clickFollowing(userName);
+    getFollowing(url);
+    return following;
   };
 
   const onPageRefresh = async (path: string) => {

@@ -6,8 +6,13 @@ type User = {
   [key: string]: unknown;
 };
 
-export type FollowersResponse = {
+type UserResponse = {
   next_max_id?: string;
   users: User[];
   [key: string]: unknown;
 };
+
+export type UserType = 'followers' | 'following';
+
+export type FollowersResponse = UserResponse;
+export type FollowingResponse = UserResponse;
