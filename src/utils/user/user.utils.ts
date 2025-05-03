@@ -1,5 +1,5 @@
-import { waitForElement } from '../dom.utils';
 import XhrInterceptor, { XhrRoute } from '../../services/XhrInterceptor';
+import { waitForElement } from '../dom.utils';
 import { apiV1, userIdNameMap } from '../../helpers/Constants';
 import { UserResponse, UserType } from '../../api/types/user';
 
@@ -92,5 +92,6 @@ export const getAllUsers = async (
 
   await openUserModal(userName, type);
   const users = await getUsers(xhrInterceptor, url);
+  await closeUserModal();
   return users;
 };

@@ -1,5 +1,5 @@
-import { getPostFollowerFollowingWrapper, getAllUsers } from './user.utils';
 import XhrInterceptor from '../../services/XhrInterceptor';
+import { getPostFollowerFollowingWrapper, getAllUsers } from './user.utils';
 
 export const getFollowersCount = async () => {
   const parentElement = await getPostFollowerFollowingWrapper();
