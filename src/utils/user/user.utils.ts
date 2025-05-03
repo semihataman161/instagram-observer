@@ -3,7 +3,7 @@ import { waitForElement } from '../dom.utils';
 import { apiV1, userIdNameMap } from '../../helpers/Constants';
 import { User, UserResponse, UserType } from '../../api/types/user';
 
-export const USER_PAGE_SIZE = 12;
+export const USER_PAGE_SIZE = 200;
 
 export const getPostFollowerFollowingWrapper = async () => {
   const selector = 'section.xc3tme8.x1xdureb.x18wylqe.x13vxnyz.xvxrpd7';

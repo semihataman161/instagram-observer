@@ -29,22 +29,22 @@ const initializeScript = () => {
     const followersCount = await getFollowersCount();
     const followingCount = await getFollowingCount();
 
-    const allFollowers = await getAllFollowers(xhrInterceptor, firstSegment);
-    console.log('AllFollowers: ', allFollowers);
+    // const allFollowers = await getAllFollowers(xhrInterceptor, firstSegment);
+    // console.log('AllFollowers: ', allFollowers);
 
-    if (followersCount === allFollowers.length) {
-      console.log('True followers count: ', followersCount);
-    } else {
-      console.log(
-        `Wrong followers count -> Expected ${followersCount}, Real: ${allFollowers.length}`
-      );
-    }
+    // if (followersCount === allFollowers.length) {
+    //   console.log('True followers count: ', followersCount);
+    // } else {
+    //   console.log(
+    //     `Wrong followers count -> Expected ${followersCount}, Real: ${allFollowers.length}`
+    //   );
+    // }
 
     const allFollowing = await getAllFollowing(xhrInterceptor, firstSegment);
     console.log('AllFollowing: ', allFollowing);
 
     if (followingCount === allFollowing.length) {
-      console.log('True following count: ', followersCount);
+      console.log('True following count: ', followingCount);
     } else {
       console.log(
         `Wrong following count -> Expected ${followingCount}, Real: ${allFollowing.length}`
