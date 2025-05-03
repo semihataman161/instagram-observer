@@ -1,15 +1,15 @@
 type Method = 'GET' | 'POST' | 'DELETE' | 'PUT' | 'PATCH';
 
-export type FollowUpRequest = {
-  getUrl: (prevData: any) => string | null;
+export type FollowUpRequest<T = any> = {
   method?: Method;
   headers?: Record<string, string>;
-  bodyBuilder?: (prevData: any) => any;
+  getUrl: (prevData: T) => string | null;
+  bodyBuilder?: (prevData: T) => any;
 };
 
-export type XhrRoute = {
+export type XhrRoute<T = any> = {
   url: string;
   method: Method;
-  callback?: (data: any) => void;
-  followUpRequest?: FollowUpRequest;
+  callback?: (data: T) => void;
+  followUpRequest?: FollowUpRequest<T>;
 };

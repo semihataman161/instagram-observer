@@ -1,10 +1,7 @@
 import { waitForElement } from './dom.utils';
-import XhrInterceptor, {
-  XhrRoute,
-  FollowUpRequest,
-} from '../services/XhrInterceptor';
+import XhrInterceptor, { XhrRoute } from '../services/XhrInterceptor';
 import { apiV1, userIdNameMap } from '../helpers/Constants';
-import { UserResponse, UserType } from '../api/types/user';
+import { UserResponse } from '../api/types/user';
 
 export const USER_PAGE_SIZE = 12;
 
@@ -78,9 +75,8 @@ export const getUsers = (
   xhrInterceptor: XhrInterceptor,
   url: string
 ): Promise<UserResponse['users']> => {
-  let baseUrl = `${url}/?count=${USER_PAGE_SIZE}`;
-
   const type = url.split('/').pop();
+  let baseUrl = `${url}/?count=${USER_PAGE_SIZE}`;
 
   if (type === 'followers') {
     baseUrl += '&search_surface=follow_list_page';
@@ -89,25 +85,20 @@ export const getUsers = (
   let users: UserResponse['users'] = [];
 
   return new Promise((resolve) => {
-    const followUpRequest: FollowUpRequest = {
-      getUrl: (prevData: UserResponse) => {
-        const nextUrl = prevData.next_max_id
-          ? `${baseUrl}&max_id=${prevData.next_max_id}`
-          : null;
-
-        if (!nextUrl) {
-          resolve(users);
-        }
-
-        return nextUrl;
-      },
-    };
-
-    const route: XhrRoute = {
+    const route: XhrRoute<UserResponse | null> = {
       url,
       method: 'GET',
-      followUpRequest,
-      callback: (data: UserResponse | null) => {
+      followUpRequest: {
+        getUrl: (prevData) => {
+          if (!prevData?.next_max_id) {
+            resolve(users);
+            return null;
+          }
+
+          return `${baseUrl}&max_id=${prevData.next_max_id}`;
+        },
+      },
+      callback: (data) => {
         if (!data) {
           resolve(users);
           return;
