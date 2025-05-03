@@ -3,8 +3,14 @@ import './core/extension/map';
 import UrlObserver from './services/UrlObserver';
 import XhrInterceptor from './services/XhrInterceptor';
 import { getFirstPathSegment } from './utils/path.utils';
-import { getAllFollowers } from './utils/user/followers.utils';
-import { getAllFollowing } from './utils/user/following.utils';
+import {
+  getFollowersCount,
+  getAllFollowers,
+} from './utils/user/followers.utils';
+import {
+  getFollowingCount,
+  getAllFollowing,
+} from './utils/user/following.utils';
 import { hostUrl, userIdNameMap } from './helpers/Constants';
 
 const initializeScript = () => {
@@ -20,10 +26,30 @@ const initializeScript = () => {
       return;
     }
 
+    const followersCount = await getFollowersCount();
+    const followingCount = await getFollowingCount();
+
     const allFollowers = await getAllFollowers(xhrInterceptor, firstSegment);
     console.log('AllFollowers: ', allFollowers);
+
+    if (followersCount === allFollowers.length) {
+      console.log('True followers count: ', followersCount);
+    } else {
+      console.log(
+        `Wrong followers count -> Expected ${followersCount}, Real: ${allFollowers.length}`
+      );
+    }
+
     const allFollowing = await getAllFollowing(xhrInterceptor, firstSegment);
     console.log('AllFollowing: ', allFollowing);
+
+    if (followingCount === allFollowing.length) {
+      console.log('True following count: ', followersCount);
+    } else {
+      console.log(
+        `Wrong following count -> Expected ${followingCount}, Real: ${allFollowing.length}`
+      );
+    }
   };
 
   const onPathChange = (path: string) => {

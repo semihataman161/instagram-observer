@@ -18,15 +18,6 @@ Map.prototype.getKeyByValue = function <K, V>(
   return null;
 };
 
-Map.prototype.hasKey = function <K, V, T>(this: Map<K, V>, search: K): boolean {
-  for (let key of this.keys()) {
-    if (key === search) {
-      return true;
-    }
-  }
-  return false;
-};
-
 Map.prototype.hasValue = function <K, V, T>(
   this: Map<K, V>,
   search: V

@@ -1,4 +1,4 @@
-type User = {
+export type User = {
   full_name: string;
   id: string;
   is_private: boolean;

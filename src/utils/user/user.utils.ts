@@ -1,7 +1,7 @@
 import XhrInterceptor, { XhrRoute } from '../../services/XhrInterceptor';
 import { waitForElement } from '../dom.utils';
 import { apiV1, userIdNameMap } from '../../helpers/Constants';
-import { UserResponse, UserType } from '../../api/types/user';
+import { User, UserResponse, UserType } from '../../api/types/user';
 
 export const USER_PAGE_SIZE = 12;
 
@@ -52,7 +52,7 @@ export const getUsers = (
     baseUrl += '&search_surface=follow_list_page';
   }
 
-  let users: UserResponse['users'] = [];
+  const userMap = new Map<string, User>();
 
   return new Promise((resolve) => {
     const route: XhrRoute<UserResponse | null> = {
@@ -61,7 +61,7 @@ export const getUsers = (
       followUpRequest: {
         getUrl: (prevData) => {
           if (!prevData?.next_max_id) {
-            resolve(users);
+            resolve(Array.from(userMap.values()));
             return null;
           }
 
@@ -70,11 +70,17 @@ export const getUsers = (
       },
       callback: (data) => {
         if (!data) {
-          resolve(users);
+          resolve(Array.from(userMap.values()));
           return;
         }
 
-        users = [...users, ...data.users];
+        for (const user of data.users) {
+          if (!userMap.has(user.id)) {
+            userMap.set(user.id, user);
+          } else {
+            console.log('Duplicate User name: ', user.username);
+          }
+        }
       },
     };
 
@@ -91,7 +97,7 @@ export const getAllUsers = async (
   const url = `${apiV1}/friendships/${userId}/${type}`;
 
   await openUserModal(userName, type);
+
   const users = await getUsers(xhrInterceptor, url);
-  await closeUserModal();
   return users;
 };
