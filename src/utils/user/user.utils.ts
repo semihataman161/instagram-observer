@@ -78,7 +78,7 @@ export const getUsers = (
           if (!userMap.has(user.id)) {
             userMap.set(user.id, user);
           } else {
-            console.log('Duplicate User name: ', user.username);
+            console.log('Duplicate Full name: ', user.full_name);
           }
         }
       },
