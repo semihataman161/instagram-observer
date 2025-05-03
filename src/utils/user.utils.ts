@@ -1,4 +1,10 @@
 import { waitForElement } from './dom.utils';
+import XhrInterceptor, {
+  XhrRoute,
+  FollowUpRequest,
+} from '../services/XhrInterceptor';
+import { apiV1, userIdNameMap } from '../helpers/Constants';
+import { UserResponse, UserType } from '../api/types/user';
 
 export const USER_PAGE_SIZE = 12;
 
@@ -68,26 +74,73 @@ export const clickFollowing = async (userName: string) => {
   element.click();
 };
 
-export const getScrollDiv = async () => {
-  const selector =
-    'div.xyi19xy.x1ccrb07.xtf3nb5.x1pc53ja.x1lliihq.x1iyjqo2.xs83m0k.xz65tgg.x1rife3k.x1n2onr6';
-  const element = await waitForElement(selector, 5000);
+export const getUsers = (
+  xhrInterceptor: XhrInterceptor,
+  url: string
+): Promise<UserResponse['users']> => {
+  let baseUrl = `${url}/?count=${USER_PAGE_SIZE}`;
 
-  if (!element) {
-    console.error('getScrollElement: Element not found');
+  const type = url.split('/').pop();
+
+  if (type === 'followers') {
+    baseUrl += '&search_surface=follow_list_page';
   }
 
-  return element;
-};
+  let users: UserResponse['users'] = [];
 
-export const scrollElement = (element: HTMLElement) => {
-  element.scrollTo({
-    top: element.scrollHeight,
-    behavior: 'smooth',
+  return new Promise((resolve) => {
+    const followUpRequest: FollowUpRequest = {
+      getUrl: (prevData: UserResponse) => {
+        const nextUrl = prevData.next_max_id
+          ? `${baseUrl}&max_id=${prevData.next_max_id}`
+          : null;
+
+        if (!nextUrl) {
+          resolve(users);
+        }
+
+        return nextUrl;
+      },
+    };
+
+    const route: XhrRoute = {
+      url,
+      method: 'GET',
+      followUpRequest,
+      callback: (data: UserResponse | null) => {
+        if (!data) {
+          resolve(users);
+          return;
+        }
+
+        users = [...users, ...data.users];
+      },
+    };
+
+    xhrInterceptor.addRoute(route);
   });
 };
 
-export const getScrollCount = async () => {
-  const followersCount = await getFollowersCount();
-  return Math.floor(followersCount / USER_PAGE_SIZE);
+export const getAllFollowers = async (
+  xhrInterceptor: XhrInterceptor,
+  userName: string
+) => {
+  const userId = userIdNameMap.getKeyByValue(userName);
+  const url = `${apiV1}/friendships/${userId}/followers`;
+
+  await clickFollowers(userName);
+  const followers = await getUsers(xhrInterceptor, url);
+  return followers;
+};
+
+export const getAllFollowing = async (
+  xhrInterceptor: XhrInterceptor,
+  userName: string
+) => {
+  const userId = userIdNameMap.getKeyByValue(userName);
+  const url = `${apiV1}/friendships/${userId}/following`;
+
+  await clickFollowing(userName);
+  const following = await getUsers(xhrInterceptor, url);
+  return following;
 };
