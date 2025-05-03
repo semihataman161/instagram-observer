@@ -3,7 +3,8 @@ import './core/extension/map';
 import UrlObserver from './services/UrlObserver';
 import XhrInterceptor from './services/XhrInterceptor';
 import { getFirstPathSegment } from './utils/path.utils';
-import { getAllFollowers, getAllFollowing } from './utils/user.utils';
+import { getAllFollowers } from './utils/user/followers.utils';
+import { getAllFollowing } from './utils/user/following.utils';
 import { hostUrl, userIdNameMap } from './helpers/Constants';
 
 const initializeScript = () => {
@@ -15,6 +16,7 @@ const initializeScript = () => {
     const shouldObserve = userIdNameMap.hasValue(firstSegment);
 
     if (!shouldObserve) {
+      console.log('Current url is not observable');
       return;
     }
 
