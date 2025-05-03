@@ -1,4 +1,5 @@
 import './core/extension/map';
+import './core/extension/array';
 
 import UrlObserver from './services/UrlObserver';
 import XhrInterceptor from './services/XhrInterceptor';
