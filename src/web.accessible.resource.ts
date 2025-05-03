@@ -5,6 +5,7 @@ import XhrInterceptor from './services/XhrInterceptor';
 import { getFirstPathSegment } from './utils/path.utils';
 import { getAllFollowers } from './utils/user/followers.utils';
 import { getAllFollowing } from './utils/user/following.utils';
+import { closeUserModal } from './utils/user/user.utils';
 import { hostUrl, userIdNameMap } from './helpers/Constants';
 
 const initializeScript = () => {
@@ -24,6 +25,7 @@ const initializeScript = () => {
     console.log('AllFollowers: ', allFollowers);
     const allFollowing = await getAllFollowing(xhrInterceptor, firstSegment);
     console.log('AllFollowing: ', allFollowing);
+    await closeUserModal();
   };
 
   const onPathChange = (path: string) => {

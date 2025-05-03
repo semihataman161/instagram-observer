@@ -1,6 +1,7 @@
 import { waitForElement } from '../dom.utils';
 import XhrInterceptor, { XhrRoute } from '../../services/XhrInterceptor';
-import { UserResponse } from '../../api/types/user';
+import { apiV1, userIdNameMap } from '../../helpers/Constants';
+import { UserResponse, UserType } from '../../api/types/user';
 
 export const USER_PAGE_SIZE = 12;
 
@@ -14,6 +15,30 @@ export const getPostFollowerFollowingWrapper = async () => {
   }
 
   return parentElement;
+};
+
+export const openUserModal = async (userName: string, type: UserType) => {
+  const selector = `a[href="/${userName}/${type}/"]`;
+  const element = await waitForElement(selector, 5000);
+
+  if (!element) {
+    console.error(`openUserModal: ${type} element not found`);
+    return;
+  }
+
+  element.click();
+};
+
+export const closeUserModal = async () => {
+  const selector = 'button._abl-';
+  const element = await waitForElement(selector, 5000);
+
+  if (!element) {
+    console.error('closeUserModal: Element not found');
+    return;
+  }
+
+  element.click();
 };
 
 export const getUsers = (
@@ -55,4 +80,17 @@ export const getUsers = (
 
     xhrInterceptor.addRoute(route);
   });
+};
+
+export const getAllUsers = async (
+  xhrInterceptor: XhrInterceptor,
+  userName: string,
+  type: UserType
+) => {
+  const userId = userIdNameMap.getKeyByValue(userName);
+  const url = `${apiV1}/friendships/${userId}/${type}`;
+
+  await openUserModal(userName, type);
+  const users = await getUsers(xhrInterceptor, url);
+  return users;
 };
