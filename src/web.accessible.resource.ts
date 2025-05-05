@@ -28,7 +28,6 @@ const initializeScript = () => {
     }
 
     const followersCount = await getFollowersCount();
-    const followingCount = await getFollowingCount();
 
     // const allFollowers = await getAllFollowers(xhrInterceptor, firstSegment);
     // console.log('AllFollowers: ', allFollowers);
@@ -43,14 +42,6 @@ const initializeScript = () => {
 
     const allFollowing = await getAllFollowing(xhrInterceptor, firstSegment);
     console.log('AllFollowing: ', allFollowing);
-
-    if (followingCount === allFollowing.length) {
-      console.log('True following count: ', followingCount);
-    } else {
-      console.log(
-        `Wrong following count -> Expected ${followingCount}, Real: ${allFollowing.length}`
-      );
-    }
   };
 
   const onPathChange = (path: string) => {

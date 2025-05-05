@@ -1,5 +1,6 @@
 import XhrInterceptor, { XhrRoute } from '../../services/XhrInterceptor';
 import { waitForElement } from '../dom.utils';
+import { delay } from '../async.utils';
 import { apiV1, userIdNameMap } from '../../helpers/Constants';
 import { User, UserResponse, UserType } from '../../api/types/user';
 
@@ -96,8 +97,10 @@ export const getAllUsers = async (
   const userId = userIdNameMap.getKeyByValue(userName);
   const url = `${apiV1}/friendships/${userId}/${type}`;
 
+  await delay(2000);
   await openUserModal(userName, type);
-
   const users = await getUsers(xhrInterceptor, url);
+  await delay(2000);
+  await closeUserModal();
   return users;
 };
