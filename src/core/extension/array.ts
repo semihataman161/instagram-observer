@@ -10,9 +10,7 @@ Array.prototype.getUniqueItemsByKey = function <T, K extends keyof T>(
 ): T[] {
   const map = new Map<T[K], T>();
   for (const item of this) {
-    if (!map.has(item[key])) {
-      map.set(item[key], item);
-    }
+    map.set(item[key], item);
   }
   return Array.from(map.values());
 };
