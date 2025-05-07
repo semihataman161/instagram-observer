@@ -4,7 +4,8 @@ import { delay } from '../async.utils';
 import { apiV1, userIdNameMap } from '../../helpers/Constants';
 import { User, UserResponse, UserType } from '../../api/types/user';
 
-export const USER_PAGE_SIZE = 200;
+const FOLLOWING_PAGE_SIZE = 200;
+const FOLLOWERS_PAGE_SIZE = 12;
 
 export const getPostFollowerFollowingWrapper = async () => {
   const selector = 'section.xc3tme8.x1xdureb.x18wylqe.x13vxnyz.xvxrpd7';
@@ -44,16 +45,18 @@ export const closeUserModal = async () => {
 
 export const getUsers = (
   xhrInterceptor: XhrInterceptor,
-  url: string
+  url: string,
+  type: UserType
 ): Promise<UserResponse['users']> => {
-  const type = url.split('/').pop();
-  let baseUrl = `${url}/?count=${USER_PAGE_SIZE}`;
+  let baseUrl = `${url}/${type}/?count=`;
 
   if (type === 'followers') {
-    baseUrl += '&search_surface=follow_list_page';
+    baseUrl += `${FOLLOWERS_PAGE_SIZE}&search_surface=follow_list_page`;
+  } else {
+    baseUrl += `${FOLLOWING_PAGE_SIZE}`;
   }
 
-  const userMap = new Map<string, User>();
+  let users: User[] = [];
 
   return new Promise((resolve) => {
     const route: XhrRoute<UserResponse | null> = {
@@ -62,7 +65,7 @@ export const getUsers = (
       followUpRequest: {
         getUrl: (prevData) => {
           if (!prevData?.next_max_id) {
-            resolve(Array.from(userMap.values()));
+            resolve(users);
             return null;
           }
 
@@ -71,17 +74,11 @@ export const getUsers = (
       },
       callback: (data) => {
         if (!data) {
-          resolve(Array.from(userMap.values()));
+          resolve(users);
           return;
         }
 
-        for (const user of data.users) {
-          if (!userMap.has(user.id)) {
-            userMap.set(user.id, user);
-          } else {
-            console.log('Duplicate Full name: ', user.full_name);
-          }
-        }
+        users = [...users, ...data.users].getUniqueItemsByKey('id');
       },
     };
 
@@ -95,11 +92,11 @@ export const getAllUsers = async (
   type: UserType
 ) => {
   const userId = userIdNameMap.getKeyByValue(userName);
-  const url = `${apiV1}/friendships/${userId}/${type}`;
+  const url = `${apiV1}/friendships/${userId}`;
 
   await delay(2000);
   await openUserModal(userName, type);
-  const users = await getUsers(xhrInterceptor, url);
+  const users = await getUsers(xhrInterceptor, url, type);
   await delay(2000);
   await closeUserModal();
   return users;

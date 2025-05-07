@@ -27,19 +27,6 @@ const initializeScript = () => {
       return;
     }
 
-    const followersCount = await getFollowersCount();
-
-    // const allFollowers = await getAllFollowers(xhrInterceptor, firstSegment);
-    // console.log('AllFollowers: ', allFollowers);
-
-    // if (followersCount === allFollowers.length) {
-    //   console.log('True followers count: ', followersCount);
-    // } else {
-    //   console.log(
-    //     `Wrong followers count -> Expected ${followersCount}, Real: ${allFollowers.length}`
-    //   );
-    // }
-
     const allFollowing = await getAllFollowing(xhrInterceptor, firstSegment);
     console.log('AllFollowing: ', allFollowing);
   };
