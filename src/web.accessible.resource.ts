@@ -4,14 +4,8 @@ import './core/extension/array';
 import UrlObserver from './services/UrlObserver';
 import XhrInterceptor from './services/XhrInterceptor';
 import { getFirstPathSegment } from './utils/path.utils';
-import {
-  getFollowersCount,
-  getAllFollowers,
-} from './utils/user/followers.utils';
-import {
-  getFollowingCount,
-  getAllFollowing,
-} from './utils/user/following.utils';
+import { getAllFollowers } from './utils/user/followers.utils';
+import { getAllFollowing } from './utils/user/following.utils';
 import { hostUrl, userIdNameMap } from './helpers/Constants';
 
 const initializeScript = () => {
@@ -27,8 +21,11 @@ const initializeScript = () => {
       return;
     }
 
+    const allFollowers = await getAllFollowers(xhrInterceptor, firstSegment);
+    console.log('All Followers: ', allFollowers);
+
     const allFollowing = await getAllFollowing(xhrInterceptor, firstSegment);
-    console.log('AllFollowing: ', allFollowing);
+    console.log('All Following: ', allFollowing);
   };
 
   const onPathChange = (path: string) => {

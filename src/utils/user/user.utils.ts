@@ -2,10 +2,7 @@ import XhrInterceptor, { XhrRoute } from '../../services/XhrInterceptor';
 import { waitForElement } from '../dom.utils';
 import { delay } from '../async.utils';
 import { apiV1, userIdNameMap } from '../../helpers/Constants';
-import { User, UserResponse, UserType } from '../../api/types/user';
-
-const FOLLOWING_PAGE_SIZE = 200;
-const FOLLOWERS_PAGE_SIZE = 12;
+import { UserResponse, UserType } from '../../api/types/user';
 
 export const getPostFollowerFollowingWrapper = async () => {
   const selector = 'section.xc3tme8.x1xdureb.x18wylqe.x13vxnyz.xvxrpd7';
@@ -43,24 +40,17 @@ export const closeUserModal = async () => {
   element.click();
 };
 
-export const getUsers = (
+export const fetchUsers = <T extends UserResponse = UserResponse>(
   xhrInterceptor: XhrInterceptor,
-  url: string,
-  type: UserType
-): Promise<UserResponse['users']> => {
-  let baseUrl = `${url}/${type}/?count=`;
+  interceptedUrl: string,
+  pageSize: number
+) => {
+  const fullUrl = `${interceptedUrl}/?count=${pageSize}`;
+  let users: T['users'] = [];
 
-  if (type === 'followers') {
-    baseUrl += `${FOLLOWERS_PAGE_SIZE}&search_surface=follow_list_page`;
-  } else {
-    baseUrl += `${FOLLOWING_PAGE_SIZE}`;
-  }
-
-  let users: User[] = [];
-
-  return new Promise((resolve) => {
-    const route: XhrRoute<UserResponse | null> = {
-      url,
+  return new Promise<T['users']>((resolve) => {
+    const route: XhrRoute<T | null> = {
+      url: interceptedUrl,
       method: 'GET',
       followUpRequest: {
         getUrl: (prevData) => {
@@ -69,7 +59,7 @@ export const getUsers = (
             return null;
           }
 
-          return `${baseUrl}&max_id=${prevData.next_max_id}`;
+          return `${fullUrl}&max_id=${prevData.next_max_id}`;
         },
       },
       callback: (data) => {
@@ -86,17 +76,22 @@ export const getUsers = (
   });
 };
 
-export const getAllUsers = async (
+export const getAllUsers = async <T extends UserResponse = UserResponse>(
   xhrInterceptor: XhrInterceptor,
   userName: string,
+  pageSize: number,
   type: UserType
 ) => {
   const userId = userIdNameMap.getKeyByValue(userName);
-  const url = `${apiV1}/friendships/${userId}`;
+  let interceptedUrl = `${apiV1}/friendships/${userId}/${type}`;
+
+  // if (type === 'followers') {
+  //   url += '&search_surface=follow_list_page';
+  // }
 
   await delay(2000);
   await openUserModal(userName, type);
-  const users = await getUsers(xhrInterceptor, url, type);
+  const users = await fetchUsers<T>(xhrInterceptor, interceptedUrl, pageSize);
   await delay(2000);
   await closeUserModal();
   return users;

@@ -1,7 +1,10 @@
 import XhrInterceptor from '../../services/XhrInterceptor';
 import { isWithinThreshold } from '../math.utils';
 import { getPostFollowerFollowingWrapper, getAllUsers } from './user.utils';
-import { User } from '../../api/types/user';
+import { Following, FollowingResponse } from '../../api/types/user';
+
+const FOLLOWING_PAGE_SIZE = 200;
+const FOLLOWING_THRESHOLD = 1000;
 
 export const getFollowingCount = async () => {
   const parentElement = await getPostFollowerFollowingWrapper();
@@ -20,18 +23,27 @@ export const getAllFollowing = async (
   const followingCount = await getFollowingCount();
 
   if (!followingCount) {
-    return;
+    return [];
   }
 
-  let allUsers: User[] = [];
+  let allFollowing: Following[] = [];
   let isAccurateEnough = false;
 
   do {
-    const users = await getAllUsers(xhrInterceptor, userName, 'following');
-    allUsers = [...allUsers, ...users].getUniqueItemsByKey('id');
+    const newFollowing = await getAllUsers<FollowingResponse>(
+      xhrInterceptor,
+      userName,
+      FOLLOWING_PAGE_SIZE,
+      'following'
+    );
+    allFollowing = [...allFollowing, ...newFollowing].getUniqueItemsByKey('id');
 
-    isAccurateEnough = isWithinThreshold(followingCount, allUsers.length, 5);
+    isAccurateEnough = isWithinThreshold(
+      followingCount,
+      allFollowing.length,
+      FOLLOWING_THRESHOLD
+    );
   } while (!isAccurateEnough);
 
-  return allUsers;
+  return allFollowing;
 };
