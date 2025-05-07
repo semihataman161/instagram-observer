@@ -49,6 +49,8 @@ export const fetchUsers = <T extends UserResponse = UserResponse>(
   let users: T['users'] = [];
 
   return new Promise<T['users']>((resolve) => {
+    console.log('Sem1');
+
     const route: XhrRoute<T | null> = {
       url: interceptedUrl,
       method: 'GET',
@@ -64,7 +66,9 @@ export const fetchUsers = <T extends UserResponse = UserResponse>(
       },
       callback: (data) => {
         if (!data) {
+          console.log('Sem2')
           resolve(users);
+          console.log('Sem3')
           return;
         }
 
@@ -84,10 +88,6 @@ export const getAllUsers = async <T extends UserResponse = UserResponse>(
 ) => {
   const userId = userIdNameMap.getKeyByValue(userName);
   let interceptedUrl = `${apiV1}/friendships/${userId}/${type}`;
-
-  // if (type === 'followers') {
-  //   url += '&search_surface=follow_list_page';
-  // }
 
   await delay(2000);
   await openUserModal(userName, type);

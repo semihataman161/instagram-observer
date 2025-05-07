@@ -30,12 +30,14 @@ export const getAllFollowers = async (
   let isAccurateEnough = false;
 
   do {
+    console.log('Sem6')
     const newFollowers = await getAllUsers<FollowersResponse>(
       xhrInterceptor,
       userName,
       FOLLOWERS_PAGE_SIZE,
       'followers'
     );
+    console.log('Sem7')
     allFollowers = [...allFollowers, ...newFollowers].getUniqueItemsByKey('id');
 
     isAccurateEnough = isWithinThreshold(

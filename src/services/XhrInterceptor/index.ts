@@ -43,6 +43,10 @@ class XhrInterceptor {
           );
 
         if (foundRoute) {
+          console.log('Found Route: ', foundRoute);
+          console.log('Routes: ', [...routes].reverse());
+          console.log('This.url: ', this.url);
+
           const originalOnload = this.onload;
           const originalOnerror = this.onerror;
 
@@ -85,6 +89,10 @@ class XhrInterceptor {
 
           super.send(body);
         } else {
+          if (this.url.includes('friendships')) {
+            console.log('This url request: ', this.url);
+          }
+
           super.send(body);
         }
       }
@@ -139,6 +147,7 @@ class XhrInterceptor {
   }
 
   public addRoute(route: XhrRoute) {
+    console.log('Route added: ', route);
     this.routes.push(route);
   }
 

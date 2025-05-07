@@ -21,11 +21,11 @@ const initializeScript = () => {
       return;
     }
 
-    const allFollowers = await getAllFollowers(xhrInterceptor, firstSegment);
-    console.log('All Followers: ', allFollowers);
-
     const allFollowing = await getAllFollowing(xhrInterceptor, firstSegment);
     console.log('All Following: ', allFollowing);
+
+    const allFollowers = await getAllFollowers(xhrInterceptor, firstSegment);
+    console.log('All Followers: ', allFollowers);
   };
 
   const onPathChange = (path: string) => {
