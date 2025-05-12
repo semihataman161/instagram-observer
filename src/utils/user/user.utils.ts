@@ -43,14 +43,14 @@ export const closeUserModal = async () => {
 export const fetchUsers = <T extends UserResponse = UserResponse>(
   xhrInterceptor: XhrInterceptor,
   interceptedUrl: string,
-  pageSize: number
+  pageSize: number,
+  actions: { onStart?: () => void; onEnd?: () => void }
 ) => {
   const fullUrl = `${interceptedUrl}/?count=${pageSize}`;
   let users: T['users'] = [];
+  const { onStart, onEnd } = actions;
 
   return new Promise<T['users']>((resolve) => {
-    console.log('Sem1');
-
     const route: XhrRoute<T | null> = {
       url: interceptedUrl,
       method: 'GET',
@@ -58,6 +58,7 @@ export const fetchUsers = <T extends UserResponse = UserResponse>(
         getUrl: (prevData) => {
           if (!prevData?.next_max_id) {
             resolve(users);
+            onEnd?.();
             return null;
           }
 
@@ -66,9 +67,8 @@ export const fetchUsers = <T extends UserResponse = UserResponse>(
       },
       callback: (data) => {
         if (!data) {
-          console.log('Sem2')
           resolve(users);
-          console.log('Sem3')
+          onEnd?.();
           return;
         }
 
@@ -77,6 +77,7 @@ export const fetchUsers = <T extends UserResponse = UserResponse>(
     };
 
     xhrInterceptor.addRoute(route);
+    onStart?.();
   });
 };
 
@@ -89,10 +90,16 @@ export const getAllUsers = async <T extends UserResponse = UserResponse>(
   const userId = userIdNameMap.getKeyByValue(userName);
   let interceptedUrl = `${apiV1}/friendships/${userId}/${type}`;
 
-  await delay(2000);
-  await openUserModal(userName, type);
-  const users = await fetchUsers<T>(xhrInterceptor, interceptedUrl, pageSize);
-  await delay(2000);
-  await closeUserModal();
+  const users = await fetchUsers<T>(xhrInterceptor, interceptedUrl, pageSize, {
+    onStart: async () => {
+      await delay(2000);
+      await openUserModal(userName, type);
+    },
+    onEnd: async () => {
+      await closeUserModal();
+      await delay(2000);
+    },
+  });
+
   return users;
 };
