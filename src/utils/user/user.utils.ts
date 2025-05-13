@@ -1,103 +1,113 @@
 import XhrInterceptor, { XhrRoute } from '../../services/XhrInterceptor';
 import { waitForElement } from '../dom.utils';
+import { delay } from '../async.utils';
 import { apiV1, userIdNameMap } from '../../helpers/Constants';
-import { User, UserResponse, UserType } from '../../api/types/user';
-
-export const USER_PAGE_SIZE = 200;
+import { UserResponse, UserType } from '../../api/types/user';
 
 export const getPostFollowerFollowingWrapper = async () => {
   const selector = 'section.xc3tme8.x1xdureb.x18wylqe.x13vxnyz.xvxrpd7';
-  const parentElement = await waitForElement(selector, 5000);
+  const section = await waitForElement(selector, 5000);
 
-  if (!parentElement) {
-    console.error('getPostFollowerFollowingWrapper: Element not found');
+  if (!section) {
+    console.error(
+      'user.utils.getPostFollowerFollowingWrapper -> section not found'
+    );
     return null;
   }
 
-  return parentElement;
+  return section;
 };
 
 export const openUserModal = async (userName: string, type: UserType) => {
   const selector = `a[href="/${userName}/${type}/"]`;
-  const element = await waitForElement(selector, 5000);
+  const button = await waitForElement(selector, 5000);
 
-  if (!element) {
-    console.error(`openUserModal: ${type} element not found`);
+  if (!button) {
+    console.error(`user.utils.openUserModal -> ${type} button not found`);
     return;
   }
 
-  element.click();
+  button.click();
 };
 
 export const closeUserModal = async () => {
-  const selector = 'button._abl-';
-  const element = await waitForElement(selector, 5000);
+  const selector = 'button[type="button"] svg[aria-label="Close"]';
+  const svg = await waitForElement(selector, 5000);
 
-  if (!element) {
-    console.error('closeUserModal: Element not found');
+  if (!svg) {
+    console.error('user.utils.closeUserModal -> svg not found');
     return;
   }
 
-  element.click();
-};
+  const button = svg.closest('button');
 
-export const getUsers = (
-  xhrInterceptor: XhrInterceptor,
-  url: string
-): Promise<UserResponse['users']> => {
-  const type = url.split('/').pop();
-  let baseUrl = `${url}/?count=${USER_PAGE_SIZE}`;
-
-  if (type === 'followers') {
-    baseUrl += '&search_surface=follow_list_page';
+  if (!button) {
+    console.error('user.utils.closeUserModal -> button not found');
+    return;
   }
 
-  const userMap = new Map<string, User>();
+  button.click();
+};
 
-  return new Promise((resolve) => {
-    const route: XhrRoute<UserResponse | null> = {
-      url,
+export const fetchUsers = <T extends UserResponse = UserResponse>(
+  xhrInterceptor: XhrInterceptor,
+  interceptedUrl: string,
+  pageSize: number,
+  executeAfterAddingRoute: () => void
+) => {
+  const fullUrl = `${interceptedUrl}/?count=${pageSize}`;
+  let users: T['users'] = [];
+
+  return new Promise<T['users']>((resolve) => {
+    const route: XhrRoute<T | null> = {
+      url: interceptedUrl,
       method: 'GET',
       followUpRequest: {
         getUrl: (prevData) => {
           if (!prevData?.next_max_id) {
-            resolve(Array.from(userMap.values()));
+            resolve(users);
             return null;
           }
 
-          return `${baseUrl}&max_id=${prevData.next_max_id}`;
+          return `${fullUrl}&max_id=${prevData.next_max_id}`;
         },
       },
       callback: (data) => {
         if (!data) {
-          resolve(Array.from(userMap.values()));
+          resolve(users);
           return;
         }
 
-        for (const user of data.users) {
-          if (!userMap.has(user.id)) {
-            userMap.set(user.id, user);
-          } else {
-            console.log('Duplicate Full name: ', user.full_name);
-          }
-        }
+        users = [...users, ...data.users].getUniqueItemsByKey('id');
       },
     };
 
     xhrInterceptor.addRoute(route);
+    executeAfterAddingRoute();
   });
 };
 
-export const getAllUsers = async (
+export const getAllUsers = async <T extends UserResponse = UserResponse>(
   xhrInterceptor: XhrInterceptor,
   userName: string,
+  pageSize: number,
   type: UserType
 ) => {
   const userId = userIdNameMap.getKeyByValue(userName);
-  const url = `${apiV1}/friendships/${userId}/${type}`;
+  let interceptedUrl = `${apiV1}/friendships/${userId}/${type}`;
 
-  await openUserModal(userName, type);
+  const executeAfterAddingRoute = () => openUserModal(userName, type);
 
-  const users = await getUsers(xhrInterceptor, url);
+  const users = await fetchUsers<T>(
+    xhrInterceptor,
+    interceptedUrl,
+    pageSize,
+    executeAfterAddingRoute
+  );
+
+  await delay(1000);
+  await closeUserModal();
+  await delay(1000);
+
   return users;
 };
