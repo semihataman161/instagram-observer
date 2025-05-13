@@ -17,7 +17,9 @@ const initializeScript = () => {
     const shouldObserve = userIdNameMap.hasValue(firstSegment);
 
     if (!shouldObserve) {
-      console.log('Current url is not observable');
+      console.log(
+        'initializeScript.onPageRefresh -> Current url is not observable'
+      );
       return;
     }
 
@@ -29,7 +31,7 @@ const initializeScript = () => {
   };
 
   const onPathChange = (path: string) => {
-    console.log('ChangedPath: ', path);
+    console.log('initializeScript.onPathChange -> ChangedPath: ', path);
   };
 
   const startScript = () => {

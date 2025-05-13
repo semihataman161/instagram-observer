@@ -4,7 +4,7 @@ export const getPostCount = async () => {
   const parentElement = await getPostFollowerFollowingWrapper();
 
   if (!parentElement) {
-    return 0;
+    return null;
   }
 
   return Number(parentElement.querySelectorAll('.html-span')[0].innerHTML);

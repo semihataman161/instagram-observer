@@ -6,49 +6,57 @@ import { UserResponse, UserType } from '../../api/types/user';
 
 export const getPostFollowerFollowingWrapper = async () => {
   const selector = 'section.xc3tme8.x1xdureb.x18wylqe.x13vxnyz.xvxrpd7';
-  const parentElement = await waitForElement(selector, 5000);
+  const section = await waitForElement(selector, 5000);
 
-  if (!parentElement) {
-    console.error('getPostFollowerFollowingWrapper: Element not found');
+  if (!section) {
+    console.error(
+      'user.utils.getPostFollowerFollowingWrapper -> section not found'
+    );
     return null;
   }
 
-  return parentElement;
+  return section;
 };
 
 export const openUserModal = async (userName: string, type: UserType) => {
   const selector = `a[href="/${userName}/${type}/"]`;
-  const element = await waitForElement(selector, 5000);
+  const button = await waitForElement(selector, 5000);
 
-  if (!element) {
-    console.error(`openUserModal: ${type} element not found`);
+  if (!button) {
+    console.error(`user.utils.openUserModal -> ${type} button not found`);
     return;
   }
 
-  element.click();
+  button.click();
 };
 
 export const closeUserModal = async () => {
-  const selector = 'button._abl-';
-  const element = await waitForElement(selector, 5000);
+  const selector = 'button[type="button"] svg[aria-label="Close"]';
+  const svg = await waitForElement(selector, 5000);
 
-  if (!element) {
-    console.error('closeUserModal: Element not found');
+  if (!svg) {
+    console.error('user.utils.closeUserModal -> svg not found');
     return;
   }
 
-  element.click();
+  const button = svg.closest('button');
+
+  if (!button) {
+    console.error('user.utils.closeUserModal -> button not found');
+    return;
+  }
+
+  button.click();
 };
 
 export const fetchUsers = <T extends UserResponse = UserResponse>(
   xhrInterceptor: XhrInterceptor,
   interceptedUrl: string,
   pageSize: number,
-  actions: { onStart?: () => void; onEnd?: () => void }
+  executeAfterAddingRoute: () => void
 ) => {
   const fullUrl = `${interceptedUrl}/?count=${pageSize}`;
   let users: T['users'] = [];
-  const { onStart, onEnd } = actions;
 
   return new Promise<T['users']>((resolve) => {
     const route: XhrRoute<T | null> = {
@@ -58,7 +66,6 @@ export const fetchUsers = <T extends UserResponse = UserResponse>(
         getUrl: (prevData) => {
           if (!prevData?.next_max_id) {
             resolve(users);
-            onEnd?.();
             return null;
           }
 
@@ -68,7 +75,6 @@ export const fetchUsers = <T extends UserResponse = UserResponse>(
       callback: (data) => {
         if (!data) {
           resolve(users);
-          onEnd?.();
           return;
         }
 
@@ -77,7 +83,7 @@ export const fetchUsers = <T extends UserResponse = UserResponse>(
     };
 
     xhrInterceptor.addRoute(route);
-    onStart?.();
+    executeAfterAddingRoute();
   });
 };
 
@@ -90,16 +96,18 @@ export const getAllUsers = async <T extends UserResponse = UserResponse>(
   const userId = userIdNameMap.getKeyByValue(userName);
   let interceptedUrl = `${apiV1}/friendships/${userId}/${type}`;
 
-  const users = await fetchUsers<T>(xhrInterceptor, interceptedUrl, pageSize, {
-    onStart: async () => {
-      await delay(2000);
-      await openUserModal(userName, type);
-    },
-    onEnd: async () => {
-      await closeUserModal();
-      await delay(2000);
-    },
-  });
+  const executeAfterAddingRoute = () => openUserModal(userName, type);
+
+  const users = await fetchUsers<T>(
+    xhrInterceptor,
+    interceptedUrl,
+    pageSize,
+    executeAfterAddingRoute
+  );
+
+  await delay(1000);
+  await closeUserModal();
+  await delay(1000);
 
   return users;
 };

@@ -64,10 +64,16 @@ class XhrInterceptor {
                   foundRoute.callback(null);
                 }
 
-                console.error('Failed to parse JSON response:', error);
+                console.error(
+                  'XhrInterceptor.start -> Failed to parse JSON response:',
+                  error
+                );
               }
             } else {
-              console.error('Request failed with status:', this.status);
+              console.error(
+                'XhrInterceptor.start -> Request failed with status:',
+                this.status
+              );
             }
 
             if (originalOnload) {
@@ -76,7 +82,9 @@ class XhrInterceptor {
           };
 
           this.onerror = (event) => {
-            console.error('Network error or request failed');
+            console.error(
+              'XhrInterceptor.start -> Network error or request failed'
+            );
 
             if (originalOnerror) {
               originalOnerror.call(this, event);
@@ -130,7 +138,7 @@ class XhrInterceptor {
             nextRequest.send(body);
           });
         } catch (err) {
-          console.error(err);
+          console.error('XhrInterceptor.start -> ', err);
         }
       }
     }
