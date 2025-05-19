@@ -49,7 +49,7 @@ export const closeUserModal = async () => {
   button.click();
 };
 
-export const fetchUsers = <T extends UserResponse = UserResponse>(
+export const getUsers = <T extends UserResponse = UserResponse>(
   xhrInterceptor: XhrInterceptor,
   interceptedUrl: string,
   pageSize: number,
@@ -98,7 +98,7 @@ export const getAllUsers = async <T extends UserResponse = UserResponse>(
 
   const executeAfterAddingRoute = () => openUserModal(userName, type);
 
-  const users = await fetchUsers<T>(
+  const users = await getUsers<T>(
     xhrInterceptor,
     interceptedUrl,
     pageSize,
